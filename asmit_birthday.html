@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Happy Birthday Asmit! | FC Ultimate Edition</title>
+
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap"
+        rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        oswald: ['Oswald', 'sans-serif'],
+                        tech: ['Rajdhani', 'sans-serif'],
+                    },
+                    colors: {
+                        'fc-purple': '#1a0b2e',
+                        'fc-dark': '#0a0118',
+                        'fc-neon': '#ccff00',
+                        'fc-teal': '#00ff9d',
+                    },
+                    animation: {
+                        'pulse-fast': 'pulse 0.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'spin-medium': 'spin 3s linear infinite',
+                        'electric': 'electric 1.5s ease-in-out infinite',
+                        'flash': 'flash 2s infinite',
+                        'breathe': 'breathe 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        electric: {
+                            '0%, 100%': { boxShadow: '0 0 10px #ccff00, 0 0 20px #ccff00, inset 0 0 10px #ccff00' },
+                            '50%': { boxShadow: '0 0 25px #00ff9d, 0 0 40px #00ff9d, inset 0 0 20px #00ff9d' },
+                        },
+                        flash: {
+                            '0%, 100%': { opacity: 0.3 },
+                            '5%': { opacity: 0.8 },
+                            '10%': { opacity: 0.3 },
+                            '50%': { opacity: 0.3 },
+                            '55%': { opacity: 0.6 },
+                            '60%': { opacity: 0.3 },
+                        },
+                        breathe: {
+                            '0%, 100%': { transform: 'scale(1)' },
+                            '50%': { transform: 'scale(1.02)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #050505;
+            overflow-x: hidden;
+            color: white;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .glass-panel {
+            background: rgba(16, 0, 43, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .clip-stat-bar {
+            clip-path: polygon(0 0, 100% 0, 95% 100%, 0% 100%);
+        }
+
+        .flag-india-bg {
+            background: linear-gradient(to bottom, #FF9933 33%, #FFFFFF 33%, #FFFFFF 66%, #138808 66%);
+        }
+
+        .chakra {
+            border: 2px solid #000080;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .holo-card-container {
+            perspective: 1200px;
+        }
+
+        .holo-card {
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out;
+        }
+
+        /* Enhanced Electric Border */
+        .electric-border {
+            position: absolute;
+            inset: -3px;
+            background: conic-gradient(from 0deg, #ccff00, transparent 20%, #00ff9d, transparent 50%, #ff0055, transparent 80%, #ccff00);
+            z-index: -1;
+            border-radius: 24px;
+            animation: spin 4s linear infinite;
+            filter: blur(8px);
+        }
+
+        .lightning-overlay {
+            position: absolute;
+            inset: 0;
+            background-image: url('https://www.transparenttextures.com/patterns/shattered-island.png');
+            mix-blend-mode: color-dodge;
+            z-index: 2;
+            pointer-events: none;
+            animation: flash 1.5s infinite;
+        }
+
+        .scanlines {
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.2) 50%, rgba(0, 0, 0, 0.2));
+            background-size: 100% 4px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 999;
+            opacity: 0.15;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, AnimatePresence } = window.Motion;
+
+        // --- 1. Background ---
+        const ThreeBackground = () => {
+            const mountRef = useRef(null);
+            useEffect(() => {
+                const scene = new THREE.Scene();
+                scene.fog = new THREE.FogExp2(0x050505, 0.02);
+                const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                mountRef.current.appendChild(renderer.domElement);
+
+                const geometry = new THREE.IcosahedronGeometry(10, 2);
+                const material = new THREE.MeshBasicMaterial({ color: 0xccff00, wireframe: true, transparent: true, opacity: 0.1 });
+                const sphere = new THREE.Mesh(geometry, material);
+                scene.add(sphere);
+
+                const pGeo = new THREE.BufferGeometry();
+                const pCount = 800;
+                const pos = new Float32Array(pCount * 3);
+                for (let i = 0; i < pCount * 3; i++) pos[i] = (Math.random() - 0.5) * 50;
+                pGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+                const pMat = new THREE.PointsMaterial({ size: 0.05, color: 0x9d4edd, transparent: true, opacity: 0.5 });
+                const pMesh = new THREE.Points(pGeo, pMat);
+                scene.add(pMesh);
+
+                camera.position.z = 15;
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    sphere.rotation.x += 0.0005; sphere.rotation.y += 0.001; pMesh.rotation.y -= 0.0002;
+                    renderer.render(scene, camera);
+                };
+                animate();
+                const resize = () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                }
+                window.addEventListener('resize', resize);
+                return () => { window.removeEventListener('resize', resize); mountRef.current?.removeChild(renderer.domElement); };
+            }, []);
+            return <div ref={mountRef} className="fixed top-0 left-0 w-full h-full -z-50" />;
+        };
+
+        // --- 2. 3D Player Model (3x Size & Ultra-High Intensity) ---
+        const ThreeDPlayerModel = ({ onLoadError }) => {
+            const mountRef = useRef(null);
+            const modelRef = useRef(null);
+            const isDragging = useRef(false);
+            const previousMouseX = useRef(0);
+            const modelRotationY = useRef(-Math.PI / 2);
+
+            useEffect(() => {
+                if (window.location.protocol === 'file:') {
+                    if (onLoadError) onLoadError();
+                    return;
+                }
+
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 100);
+                camera.position.set(0, 0.5, 6);
+
+                const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                const updateSize = () => {
+                    if (mountRef.current) {
+                        const width = mountRef.current.clientWidth;
+                        const height = mountRef.current.clientHeight;
+                        renderer.setSize(width, height);
+                        camera.aspect = width / height;
+                        camera.updateProjectionMatrix();
+                    }
+                };
+
+                mountRef.current.appendChild(renderer.domElement);
+                updateSize();
+                window.addEventListener('resize', updateSize);
+
+                // --- INTENSE LIGHTING ---
+                const ambientLight = new THREE.AmbientLight(0xffffff, 4.5);
+                scene.add(ambientLight);
+
+                const keyLight = new THREE.DirectionalLight(0xffffff, 8.0);
+                keyLight.position.set(-2, 5, 5);
+                scene.add(keyLight);
+
+                const rimLight = new THREE.SpotLight(0xccff00, 12);
+                rimLight.position.set(0, 5, -5);
+                scene.add(rimLight);
+
+                let mixer;
+                const loader = new THREE.GLTFLoader();
+
+                try {
+                    loader.load('player.glb', (gltf) => {
+                        const model = gltf.scene;
+                        modelRef.current = model;
+
+                        // 3X SCALE & CENTERED
+                        model.position.set(0, -1.2, 0);
+                        model.scale.set(3.0, 3.0, 3.0);
+
+                        model.rotation.y = modelRotationY.current;
+                        scene.add(model);
+
+                        if (gltf.animations && gltf.animations.length > 0) {
+                            mixer = new THREE.AnimationMixer(model);
+                            mixer.clipAction(gltf.animations[0]).play();
+                        }
+                    }, undefined, (err) => {
+                        if (onLoadError) onLoadError();
+                    });
+                } catch (e) { if (onLoadError) onLoadError(); }
+
+                // Interaction
+                const onMouseDown = (e) => { isDragging.current = true; previousMouseX.current = e.touches ? e.touches[0].clientX : e.clientX; };
+                const onMouseMove = (e) => {
+                    if (!isDragging.current || !modelRef.current) return;
+                    const currentX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const delta = currentX - previousMouseX.current;
+                    modelRotationY.current += delta * 0.015;
+                    previousMouseX.current = currentX;
+                };
+                const onMouseUp = () => { isDragging.current = false; };
+
+                const canvas = renderer.domElement;
+                canvas.addEventListener('mousedown', onMouseDown);
+                canvas.addEventListener('touchstart', onMouseDown);
+                window.addEventListener('mousemove', onMouseMove);
+                window.addEventListener('touchmove', onMouseMove);
+                window.addEventListener('mouseup', onMouseUp);
+                window.addEventListener('touchend', onMouseUp);
+
+                const clock = new THREE.Clock();
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const delta = clock.getDelta();
+                    if (mixer) mixer.update(delta);
+                    if (modelRef.current) {
+                        modelRef.current.rotation.y = modelRotationY.current;
+                    }
+                    renderer.render(scene, camera);
+                };
+                animate();
+
+                return () => {
+                    window.removeEventListener('resize', updateSize);
+                    window.removeEventListener('mousemove', onMouseMove);
+                    window.removeEventListener('touchmove', onMouseMove);
+                    window.removeEventListener('mouseup', onMouseUp);
+                    window.removeEventListener('touchend', onMouseUp);
+                    mountRef.current?.removeChild(renderer.domElement);
+                };
+            }, []);
+
+            return <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />;
+        };
+
+        // --- 3. Holo Card (Animated) ---
+        const HoloCard = ({ onSwap }) => {
+            const cardRef = useRef(null);
+            const handleMove = (e) => {
+                if (!cardRef.current) return;
+                let cx = e.touches ? e.touches[0].clientX : e.clientX;
+                let cy = e.touches ? e.touches[0].clientY : e.clientY;
+                const rect = cardRef.current.getBoundingClientRect();
+                const x = cx - rect.left; const y = cy - rect.top;
+                const rotateX = ((y - rect.height / 2) / (rect.height / 2)) * -12;
+                const rotateY = ((x - rect.width / 2) / (rect.width / 2)) * 12;
+                cardRef.current.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+            };
+            const resetCard = () => { if (cardRef.current) cardRef.current.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`; };
+
+            return (
+                <motion.div
+                    ref={cardRef}
+                    initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5, rotateY: 180 }}
+                    className="holo-card relative w-[55vw] max-w-[240px] lg:w-[350px] aspect-[2/3.1] rounded-xl lg:rounded-3xl z-20 animate-breathe"
+                    onMouseMove={handleMove} onTouchMove={handleMove} onMouseLeave={resetCard} onTouchEnd={resetCard}
+                >
+                    <div className="electric-border"></div>
+                    <div className="absolute inset-0 bg-[#1a0b2e] rounded-xl lg:rounded-3xl overflow-hidden border-2 border-fc-neon box-border">
+                        <div className="lightning-overlay"></div>
+
+                        {/* SWAP BUTTON */}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onSwap(); }}
+                            className="absolute top-2 right-2 z-50 bg-black/60 hover:bg-fc-neon/80 text-white hover:text-black p-1.5 rounded-full border border-fc-neon transition-colors shadow-[0_0_10px_#ccff00]"
+                        >
+                            <i data-lucide="box" className="w-4 h-4 lg:w-5 lg:h-5"></i>
+                        </button>
+
+                        <div className="relative z-10 h-full w-full p-3 flex flex-col text-white">
+                            <div className="flex flex-col items-start absolute top-2 left-2 lg:top-3 lg:left-3 z-20">
+                                <span className="text-3xl lg:text-6xl font-oswald font-bold text-fc-neon leading-none drop-shadow-[0_0_8px_#ccff00]">99</span>
+                                <span className="text-base lg:text-3xl font-oswald text-white leading-none mb-1">CB</span>
+                                <div className="w-6 h-4 lg:w-8 lg:h-5 relative flag-india-bg rounded shadow border border-white/20 mb-1 overflow-hidden">
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <svg viewBox="0 0 24 24" className="w-2 h-2 lg:w-3 lg:h-3 text-blue-900 fill-current animate-spin-medium"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" /><circle cx="12" cy="12" r="2" fill="currentColor" /><path stroke="currentColor" strokeWidth="1" d="M12 2v20M2 12h20M4.9 4.9l14.2 14.2M4.9 19.1L19.1 4.9" /></svg>
+                                    </div>
+                                </div>
+                                <div className="w-6 h-6 lg:w-8 lg:h-8 rounded-full bg-white flex items-center justify-center font-bold text-black text-[8px] shadow border border-gray-300">FC</div>
+                            </div>
+                            <div className="absolute top-6 lg:top-8 left-0 w-full h-[65%] z-10">
+                                <img src="asmit1.png" onError={(e) => { e.target.src = "https://placehold.co/300x400/1a0b2e/ccff00?text=ASMIT"; }} className="w-full h-full object-cover object-top mask-image-gradient drop-shadow-[0_0_20px_rgba(204,255,0,0.4)]" style={{ maskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)' }} />
+                            </div>
+                            <div className="mt-auto z-20">
+                                <h2 className="text-xl lg:text-5xl font-oswald font-bold text-center uppercase tracking-widest drop-shadow-[0_0_10px_#ccff00] mb-1 lg:mb-2 text-white">ASMIT</h2>
+                                <div className="w-full h-0.5 bg-fc-neon mb-1 lg:mb-2 opacity-80 shadow-[0_0_8px_#ccff00]"></div>
+                                <div className="grid grid-cols-2 gap-x-1 lg:gap-x-4 gap-y-0.5 lg:gap-y-1 text-[8px] lg:text-lg font-oswald px-1">
+                                    <div className="flex justify-between border-b border-white/10"><span className="font-bold">99</span> <span className="text-gray-400">PAC</span></div>
+                                    <div className="flex justify-between border-b border-white/10"><span className="font-bold">96</span> <span className="text-gray-400">DRI</span></div>
+                                    <div className="flex justify-between border-b border-white/10"><span className="font-bold">92</span> <span className="text-gray-400">SHO</span></div>
+                                    <div className="flex justify-between border-b border-white/10"><span className="font-bold text-fc-neon">99</span> <span className="text-fc-neon">DEF</span></div>
+                                    <div className="flex justify-between border-b border-white/10"><span className="font-bold">95</span> <span className="text-gray-400">PAS</span></div>
+                                    <div className="flex justify-between border-b border-white/10"><span className="font-bold">98</span> <span className="text-gray-400">PHY</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+            );
+        };
+
+        // --- 4. Walkout ---
+        const Walkout = ({ onComplete }) => {
+            const [stage, setStage] = useState(0);
+
+            useEffect(() => {
+                const run = async () => {
+                    await new Promise(r => setTimeout(r, 500)); setStage(1); // Flag
+                    await new Promise(r => setTimeout(r, 3500)); setStage(2); // Pos (SLOW)
+                    await new Promise(r => setTimeout(r, 2500)); setStage(3); // Club
+                    await new Promise(r => setTimeout(r, 2000)); setStage(4); // Lightning
+                    await new Promise(r => setTimeout(r, 1500)); setStage(5); // Football Throw
+                    await new Promise(r => setTimeout(r, 600)); setStage(6); // Card Reveal (SLAM)
+                    await new Promise(r => setTimeout(r, 3000)); onComplete();
+                };
+                run();
+            }, []);
+
+            return (
+                <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black overflow-hidden">
+                    <motion.div animate={{ opacity: [0.2, 0.5, 0.2] }} transition={{ duration: 3, repeat: Infinity }} className="absolute inset-0 bg-gradient-radial from-[#2a0052] to-black z-0" />
+                    <div className="absolute top-4 right-4 z-50"><button onClick={onComplete} className="text-gray-500 hover:text-white font-tech text-sm border border-gray-700 px-3 py-1 rounded hover:border-fc-neon">SKIP >></button></div>
+
+                    <AnimatePresence mode="wait">
+                        {/* Stage 1: Flag */}
+                        {stage === 1 && <motion.div key="flag" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1.2, opacity: 1 }} exit={{ scale: 2, opacity: 0 }} transition={{ duration: 1.5 }} className="z-20 text-center"><div className="w-40 h-24 lg:w-60 lg:h-40 flag-india-bg shadow-[0_0_100px_rgba(255,153,51,0.8)] flex items-center justify-center rounded-lg border-2 border-white"><div className="w-8 h-8 lg:w-14 lg:h-14"><svg viewBox="0 0 24 24" className="w-full h-full text-blue-900 fill-current animate-spin-medium"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" /><circle cx="12" cy="12" r="2" fill="currentColor" /><path stroke="currentColor" strokeWidth="1" d="M12 2v20M2 12h20M4.9 4.9l14.2 14.2M4.9 19.1L19.1 4.9" /></svg></div></div></motion.div>}
+
+                        {/* Stage 2: CB */}
+                        {stage === 2 && <motion.h1 key="pos" initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -100, opacity: 0 }} transition={{ duration: 2.5, ease: "easeOut" }} className="text-[100px] lg:text-[200px] font-oswald font-bold text-fc-neon z-20 italic drop-shadow-[0_0_40px_#ccff00]">CB</motion.h1>}
+
+                        {/* Stage 3: FC - Clean Exit */}
+                        {stage === 3 && <motion.div key="club" initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1.2, rotate: 0 }} exit={{ scale: 0, opacity: 0, rotate: 180 }} transition={{ duration: 0.8 }} className="w-40 h-40 lg:w-60 lg:h-60 bg-white rounded-full flex items-center justify-center border-8 border-fc-neon shadow-[0_0_80px_white] z-20"><span className="text-black font-bold font-oswald text-6xl lg:text-8xl">FC</span></motion.div>}
+                    </AnimatePresence>
+
+                    {/* Stage 5: Football Throw Animation */}
+                    {stage === 5 && (
+                        <div className="absolute inset-0 z-50 flex items-center justify-center">
+                            <motion.div
+                                initial={{ scale: 0.1, opacity: 0 }}
+                                animate={{ scale: [0.1, 1.5, 50], opacity: [0, 1, 0] }}
+                                transition={{ duration: 0.6, times: [0, 0.8, 1] }}
+                                className="w-20 h-20 bg-white rounded-full border-4 border-black flex items-center justify-center shadow-[0_0_50px_white]"
+                            >
+                                <div className="w-full h-full border border-gray-300 rounded-full"></div>
+                            </motion.div>
+                        </div>
+                    )}
+
+                    {/* Stage 6: Card Reveal Slam */}
+                    {stage >= 6 && (
+                        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center h-full w-full">
+                            <motion.div
+                                initial={{ scale: 3, opacity: 0, y: -100 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                transition={{ type: "spring", bounce: 0.5, duration: 0.8 }}
+                                className="scale-110 origin-center"
+                            >
+                                <HoloCard onSwap={() => { }} />
+                            </motion.div>
+                            {/* Screen Shake Effect on Slam */}
+                            <motion.div
+                                initial={{ opacity: 0.5 }} animate={{ opacity: 0 }} transition={{ duration: 0.3 }}
+                                className="absolute inset-0 bg-white mix-blend-overlay"
+                            />
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // --- 5. Main App ---
+        const App = () => {
+            const [view, setView] = useState('pack');
+            const [activeTab, setActiveTab] = useState('stats');
+            const [show3D, setShow3D] = useState(false); // Toggle State
+            const [use3D, setUse3D] = useState(true);
+
+            useEffect(() => { lucide.createIcons(); }, [view, activeTab, show3D]);
+
+            const StatRow = ({ label, val, color = "bg-white" }) => (
+                <div className="flex items-center gap-3 mb-2 lg:mb-3">
+                    <span className="w-8 lg:w-10 text-[10px] lg:text-xs font-tech text-gray-400 uppercase tracking-wider">{label}</span>
+                    <div className="flex-1 h-1.5 lg:h-2 bg-gray-800 rounded-sm clip-stat-bar overflow-hidden">
+                        <motion.div initial={{ width: 0 }} whileInView={{ width: `${val}%` }} transition={{ duration: 1 }} className={`h-full ${color} shadow-[0_0_10px_${color.replace('bg-', '')}]`} />
+                    </div>
+                    <span className="w-6 lg:w-8 text-right font-oswald text-xs lg:text-sm font-bold">{val}</span>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen relative font-sans text-white pb-12 overflow-x-hidden">
+                    <div className="scanlines"></div>
+                    <ThreeBackground />
+
+                    <AnimatePresence>
+                        {view === 'pack' && (
+                            <div className="fixed inset-0 flex items-center justify-center z-50 px-4">
+                                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setView('walkout')} className="relative group w-64 lg:w-80">
+                                    <div className="aspect-[3/4] bg-black/60 backdrop-blur-md border-4 border-fc-neon rounded-3xl flex flex-col items-center justify-center shadow-[0_0_60px_rgba(204,255,0,0.3)] transition-all duration-300">
+                                        <div className="text-7xl mb-4 animate-bounce drop-shadow-[0_0_20px_#ccff00]">🎁</div>
+                                        <h2 className="text-3xl font-oswald font-bold uppercase tracking-wide">Open Pack</h2>
+                                        <p className="text-fc-neon font-tech mt-2 text-sm uppercase tracking-widest">Ultimate Birthday</p>
+                                    </div>
+                                </motion.button>
+                            </div>
+                        )}
+                        {view === 'walkout' && <Walkout onComplete={() => setView('home')} />}
+                    </AnimatePresence>
+
+                    {view === 'home' && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative z-10 container mx-auto px-4 pt-6 lg:pt-10 max-w-7xl">
+
+                            <header className="relative z-10 flex justify-between items-center mb-4 lg:mb-16 border-b border-white/10 pb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 lg:w-10 lg:h-10 bg-fc-neon rounded-full flex items-center justify-center text-black font-bold text-lg shadow-lg">A</div>
+                                    <div><h1 className="font-oswald text-lg lg:text-xl uppercase tracking-widest leading-none">Asmit Kundu</h1><p className="text-[10px] lg:text-xs text-gray-400 font-tech">Ultimate Edition</p></div>
+                                </div>
+                                <div className="text-right"><p className="text-fc-neon font-oswald font-bold text-lg lg:text-xl drop-shadow-sm">Kundu 04</p></div>
+                            </header>
+
+                            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-12 items-start">
+
+                                {/* LEFT COLUMN: CARD / 3D SWAP AREA */}
+                                <div className="lg:col-span-5 flex flex-col items-center justify-start pt-2 min-h-[350px] lg:min-h-[500px]">
+                                    <AnimatePresence mode="wait">
+                                        {!show3D ? (
+                                            <HoloCard key="card" onSwap={() => setShow3D(true)} />
+                                        ) : (
+                                            <motion.div
+                                                key="3d"
+                                                initial={{ opacity: 0, scale: 0.5 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                exit={{ opacity: 0, scale: 0.5 }}
+                                                className="relative w-[55vw] max-w-[240px] lg:w-[350px] aspect-[2/3.1] z-20"
+                                            >
+                                                {/* Close Button */}
+                                                <button
+                                                    onClick={() => setShow3D(false)}
+                                                    className="absolute top-0 right-0 z-50 bg-fc-neon text-black p-1.5 rounded-full hover:bg-white transition shadow-lg"
+                                                >
+                                                    <i data-lucide="x" className="w-4 h-4 lg:w-5 lg:h-5"></i>
+                                                </button>
+
+                                                {/* Solid Background for 3D Model Visibility */}
+                                                <div className="w-full h-full border-2 border-fc-neon/30 rounded-xl lg:rounded-3xl bg-[#151515] shadow-2xl relative overflow-hidden">
+                                                    <div className="lightning-overlay"></div>
+                                                    {use3D ? <ThreeDPlayerModel mode="home" onLoadError={() => setUse3D(false)} /> : <img src="asmit1.png" className="w-full h-full object-contain p-4" />}
+                                                </div>
+                                                <div className="text-center mt-2 text-xs font-tech text-fc-neon animate-pulse">DRAG TO ROTATE</div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+
+                                {/* RIGHT COLUMN: STATS */}
+                                <div className="lg:col-span-7 mt-4 lg:mt-0 pl-0 lg:pl-2">
+                                    <motion.div initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
+                                        <h2 className="text-4xl lg:text-8xl font-oswald font-bold uppercase italic leading-[0.9] mb-2 lg:mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white via-fc-neon to-white drop-shadow-[0_0_20px_rgba(204,255,0,0.4)]">Happy <br />Birthday</h2>
+                                        <p className="text-lg lg:text-3xl font-tech text-gray-200 mb-4 lg:mb-6 uppercase tracking-widest border-l-4 border-fc-neon pl-4">Centre Back | Legend</p>
+                                        <div className="glass-panel p-4 rounded-xl mb-6"><p className="italic text-sm lg:text-xl text-gray-100 font-serif leading-relaxed">"To the most trustworthy defender of our secrets and the best brother a guy could ask for. You protect the vibe just like you protect the goal—with loyalty and heart. Happy Birthday, Legend!"</p></div>
+                                    </motion.div>
+                                    <div className="flex gap-3 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+                                        {['stats', 'highlights', 'brotherhood'].map(tab => (
+                                            <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2 font-oswald uppercase font-bold text-xs lg:text-lg rounded skew-x-[-10deg] transition-all ${activeTab === tab ? 'bg-fc-neon text-black shadow-[0_0_20px_#ccff00]' : 'bg-white/10 text-gray-400 hover:bg-white/20'}`}><span className="block skew-x-[10deg]">{tab}</span></button>
+                                        ))}
+                                    </div>
+                                    <div className="min-h-[300px] lg:min-h-[400px]">
+                                        {activeTab === 'stats' && (
+                                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-4 lg:p-8 rounded-xl">
+                                                <h3 className="font-oswald text-lg lg:text-3xl text-fc-neon mb-4 lg:mb-6 uppercase">Player Attributes</h3>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8">
+                                                    <div><h4 className="text-xs lg:text-sm font-tech text-gray-400 mb-2 uppercase">In-Game</h4><StatRow label="DEF" val={99} color="bg-fc-neon" /><StatRow label="PHY" val={98} color="bg-fc-neon" /><StatRow label="PAC" val={88} color="bg-white" /></div>
+                                                    <div><h4 className="text-xs lg:text-sm font-tech text-gray-400 mb-2 uppercase">Real Life</h4><StatRow label="BRO" val={100} color="bg-purple-500" /><StatRow label="VIBE" val={99} color="bg-purple-500" /><StatRow label="IQ" val={95} color="bg-white" /></div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                        {activeTab === 'highlights' && (
+                                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
+                                                    <div key={n} className="aspect-[4/5] bg-white/5 rounded-lg overflow-hidden relative group cursor-pointer border border-white/10 hover:border-fc-neon transition-colors duration-300">
+                                                        <img src={`asmit${n}.jpg`} onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/400x500/1a0b2e/ccff00?text=Pic+${n}`; }} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500" />
+                                                    </div>
+                                                ))}
+                                            </motion.div>
+                                        )}
+                                        {activeTab === 'brotherhood' && (
+                                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3 lg:space-y-4">
+                                                <div className="glass-panel p-4 lg:p-6 rounded-xl border-l-4 border-blue-500"><h3 className="font-oswald text-base lg:text-xl text-white mb-2 flex items-center gap-2"><i data-lucide="shield" className="w-5 h-5 text-blue-400"></i> The Reliable Wall</h3><p className="text-gray-300 font-tech text-xs lg:text-sm leading-relaxed">"In a world full of strikers, you're the solid defense I can always trust. Thank you for being the most reliable friend and always having my back, no matter the score."</p></div>
+                                                <div className="glass-panel p-4 lg:p-6 rounded-xl border-l-4 border-fc-neon"><h3 className="font-oswald text-base lg:text-xl text-white mb-2 flex items-center gap-2"><i data-lucide="crown" className="w-5 h-5 text-fc-neon"></i> MVP of Brotherhood</h3><p className="text-gray-300 font-tech text-xs lg:text-sm leading-relaxed">"You don't just play the game, you define loyalty. Here's to the best brother who makes every moment legendary. Let's keep winning at life together!"</p></div>
+                                            </motion.div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                            <footer className="mt-20 text-center text-gray-500 font-tech text-xs lg:text-sm uppercase tracking-[0.3em]">Designed for Asmit • Ultimate Edition 2025</footer>
+                        </motion.div>
+                    )}
+                </div>
+            );
+        };
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>
